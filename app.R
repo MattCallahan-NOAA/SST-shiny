@@ -14,7 +14,7 @@ ui <- fluidPage(
 
   #Define Regional output in separate tabs
   tabsetPanel(type="tabs", 
-              tabPanel("2020 Bering Sea", 
+              tabPanel("Map", 
               tags$blockquote("We present daily sea surface temperatures and marine heatwave status for each of the ecosystem regions
  managed by the Alaska Fisheries Science Center. Temperatures are updated automatically
   using satellite data curated by NOAA's Coral Reef Watch Program (https://coralreefwatch.noaa.gov/).
@@ -24,19 +24,19 @@ ui <- fluidPage(
  tags$blockquote("More information can be found here (https://www.fisheries.noaa.gov/feature-story/current-sea-surface-temperatures-eastern-bering-sea)
  or by contacting jordan.watson@noaa.gov or matt.callahan@noaa.gov."),
             # tabPanel("2020 Bering Sea", textOutput("text"),
-                        imageOutput(outputId = "BS2020image", height = 800, width=1040)%>%
+                        imageOutput(outputId = "ESR_Map", height = 1000, width=1200)%>%
                           withSpinner()),
-              tabPanel("Current Bering Sea",
+              tabPanel("Bering Sea",
                        downloadButton("BSpng", "Download BS image"),
                        downloadButton("BSData","Download BS SST Data"),
                        plotOutput(outputId = "BSplot", height = 1000, width=1200)%>%
                          withSpinner()),
-              tabPanel("Current Gulf of Alaska", 
+              tabPanel("Gulf of Alaska", 
                        downloadButton("GOApng","Download GOA image"),
                        downloadButton("GOAData","Download GOA SST"),
                        plotOutput(outputId = "GOAplot", height = 1000, width=1200)%>%
                          withSpinner()),
-              tabPanel("Current Aleutian Islands",
+              tabPanel("Aleutian Islands",
                        downloadButton("AIpng","Download AI image"),
                        downloadButton("AIData","Download AI SST"),
                        plotOutput(outputId = "AIplot", height = 1000, width=1200)%>%
@@ -46,9 +46,9 @@ ui <- fluidPage(
 server <- function(input, output) {
   ####--------------------------------------------------------------####
   #create first tab that will hopefully load before the other tabs
-  output$BS2020image<-renderImage({
+  output$ESR_Map<-renderImage({
     height=100
-    filename <- normalizePath(file.path('Figures/SST_4_panel_bering_2020.png'))
+    filename <- normalizePath(file.path('Figures/ESR_Map.png'))
     
     # Return a list containing the filename and alt text
     list(src = filename)
