@@ -3,28 +3,28 @@ library(tidyverse)
 library(shinycssloaders)
 library(lubridate)
 library(cowplot)
-library(magick)
 library(httr)
 library(heatwaveR)
 library(gridExtra)
 library(scales)
+#library(magick)
 
 ui <- fluidPage(
   
 
   #Define Regional output in separate tabs
   tabsetPanel(type="tabs", 
-              tabPanel("Map", 
+              tabPanel("Map",
               tags$blockquote("We present daily sea surface temperatures and marine heatwave status for each of the ecosystem regions
  managed by the Alaska Fisheries Science Center. Temperatures are updated automatically
   using satellite data curated by NOAA's Coral Reef Watch Program (https://coralreefwatch.noaa.gov/).
   The current year's daily temperatures (black lines) are compared to the previous year (blue line),
   the daily average (1985-2014), and each of the individual years since 1985 (grey lines)."),
  tags$blockquote("Marine heatwave calculations are performed on the daily SST data using the heatwaveR package (https://robwschlegel.github.io/heatwaveR/)."),
- tags$blockquote("More information can be found here (https://www.fisheries.noaa.gov/feature-story/current-sea-surface-temperatures-eastern-bering-sea)
- or by contacting jordan.watson@noaa.gov or matt.callahan@noaa.gov."),
+ tags$blockquote("More information can be found here (https://www.fisheries.noaa.gov/feature-story/current-sea-surface-temperatures-eastern-bering-sea),
+ on github (https://github.com/MattCallahan-NOAA/SST-shiny/), or by contacting emily.lemagie@noaa.gov or matt.callahan@noaa.gov."),
             # tabPanel("2020 Bering Sea", textOutput("text"),
-                        imageOutput(outputId = "ESR_Map", height = 1000, width=1200)%>%
+                        imageOutput(outputId = "ESR_Map")%>%
                           withSpinner()),
               tabPanel("Bering Sea",
                        downloadButton("BSpng", "Download BS image"),
@@ -47,11 +47,11 @@ server <- function(input, output) {
   ####--------------------------------------------------------------####
   #create first tab that will hopefully load before the other tabs
   output$ESR_Map<-renderImage({
-    height=100
-    filename <- normalizePath(file.path('Figures/ESR_Map.png'))
+    filename <- normalizePath(file.path('Figures/esr_map_depth_filters.png'))
     
     # Return a list containing the filename and alt text
-    list(src = filename)
+    list(src = filename,
+         height = 800)
     
   }, deleteFile = FALSE)
   
@@ -80,21 +80,14 @@ server <- function(input, output) {
   mylogoy <- 0.285
   
   ####-------------------------------------------------------------####
-  #Load Bering Sea data And more code used for subsequent plots
-  BSbasedata<-readRDS("BSbase.rds")
+  #Load Base data
+  base<-readRDS("Data/base.rds")
   
-  #  Define the Bering Sea dataset
-  BSupdateddata <- httr::content(httr::GET('https://apex.psmfc.org/akfin/data_marts/akmp/ecosystem_sub_crw_avg_sst?ecosystem_sub=Southeastern%20Bering%20Sea,Northern%20Bering%20Sea&start_date=20210101&end_date=20211231'), type = "application/json") %>% 
-    bind_rows %>% 
-    mutate(date=as_date(READ_DATE)) %>% 
-    data.frame %>% 
-    dplyr::select(date,meansst=MEANSST,Ecosystem_sub=ECOSYSTEM_SUB)
+  #  Define the Bering Sea datase
+  BSupdateddata<-base%>%
+    filter(Ecosystem_sub %in% c("Southeastern Bering Sea", "Northern Bering Sea"))
   
-  BSupdateddata<-bind_rows(BSbasedata, BSupdateddata)
-  
-  
-  BSdata <- 
-    BSupdateddata %>% 
+  BSdata <- BSupdateddata %>%
     rename_all(tolower) %>% 
     mutate(read_date=date,
            esr_region=ecosystem_sub,
@@ -154,8 +147,8 @@ server <- function(input, output) {
     ggdraw(mylines_base)
   }
   
-  pb1 <- BSplotfun("Northern Bering Sea","Southeastern Bering Sea") + 
-    draw_image("Figures/fisheries_header_logo_jul2019.png",scale=0.2,x=mylogox,y=mylogoy,hjust=0.35)
+  pb1 <-reactive(BSplotfun("Northern Bering Sea","Southeastern Bering Sea") + 
+    draw_image("Figures/fisheries_header_logo_jul2019.png",scale=0.2,x=mylogox,y=mylogoy,hjust=0.35))
   
   ####-------------------------------------------------####
   #Code used for all lower panels
@@ -198,22 +191,26 @@ server <- function(input, output) {
   
   ####------------------------------------------------####
   #Bering Sea lower panel code
+
   # Use heatwaveR package to detect marine heatwaves.
   BSmhw <- (detect_event(ts2clm(BSupdateddata %>% 
                                   filter(Ecosystem_sub=="Southeastern Bering Sea") %>% 
                                   rename(t=date,temp=meansst) %>% 
                                   arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
-    mutate(region="2021 Southeastern Bering Sea Heatwaves") %>% 
+    mutate(region=paste0(current.year," Southeastern Bering Sea Heatwaves")) %>% 
     bind_rows((detect_event(ts2clm(BSupdateddata %>%
                                      filter(Ecosystem_sub=="Northern Bering Sea") %>% 
                                      rename(t=date,temp=meansst) %>% 
                                      arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
-                mutate(region="2021 Northern Bering Sea Heatwaves"))
+                mutate(region=paste0(current.year," Northern Bering Sea Heatwaves")))
   
   #  Create a vector of the days remaining in the year without data.
   yearvec <- seq.Date(max(BSmhw$t)+1,as_date(paste0(current.year,"-11-30")),"day")
+  #create year length vector
+  current.year.length<-ifelse(leap_year(current.year)==FALSE, 365,366)
+
   #  Replace the current year with the previous year for our remaining days vector.
-  BSdummydat <- data.frame(t=as_date(gsub(current.year,(current.year-1),yearvec)),newt=yearvec) %>% 
+  BSdummydat <- data.frame(t=yearvec-current.year.length,newt=yearvec) %>% 
     inner_join(BSmhw %>% dplyr::select(region,thresh,seas,t)) %>% 
     dplyr::select(t=newt,region,thresh,seas) %>% 
     mutate(temp=NA)
@@ -229,13 +226,13 @@ server <- function(input, output) {
     arrange(t)
   
   #  Create annotation text for plot
-  BSmhw_lab <- data.frame(region=c("2021 Northern Bering Sea Heatwaves","2021 Southeastern Bering Sea Heatwaves"),
+  BSmhw_lab <- data.frame(region=c(paste0(current.year," Northern Bering Sea Heatwaves"),paste0(current.year," Southeastern Bering Sea Heatwaves")),
                           t=c(as_date(paste0(last.year,"-12-05")),as_date(paste0(last.year,"-12-05"))),
                           temp=rev(c((1*max(BSclim_cat$temp,na.rm=TRUE)),(0.9*max(BSclim_cat$temp,na.rm=TRUE)))),
                           mylab=rev(c("Heatwave intensity increases\n(successive dotted lines)\nas waters warm.",
                                       "Heatwaves occur when daily\nSST exceeds the 90th\npercentile of normal\n(lowest dotted line) for\n5 consecutive days.")))
   #  Plotting code only slightly modified from heatwaveR vignette
-  pb2 <- ggplot(data = BSclim_cat %>% filter(t>=as.Date("2020-12-01")), aes(x = t, y = temp)) +
+  pb2 <- reactive(ggplot(data = BSclim_cat %>% filter(t>=as.Date(paste0(last.year,"-12-01"))), aes(x = t, y = temp)) +
     geom_line(aes(y = temp, col = "Temperature"), size = 0.85) +
     geom_flame(aes(y2 = thresh, fill = Moderate)) +
     geom_flame(aes(y2 = thresh_2x, fill = Strong)) +
@@ -252,7 +249,7 @@ server <- function(input, output) {
                         breaks = c("Temperature", "Baseline", "Moderate (1x Threshold)"),guide=FALSE) +
     scale_fill_manual(name = "Heatwave\nIntensity", values = c(Extreme,Severe,Strong,Moderate),labels=c("Extreme","Severe","Strong","Moderate")#, guide = FALSE
     ) +
-    scale_x_date(limits=c(as_date("2020-12-01"),as_date("2021-11-30")),date_breaks="1 month",date_labels = "%b",expand=c(0.01,0)) +
+    scale_x_date(limits=c(as_date(paste0(last.year,"-12-01")),as_date(paste0(current.year,"-11-30"))),date_breaks="1 month",date_labels = "%b",expand=c(0.01,0)) +
     scale_y_continuous(labels = scales::number_format(accuracy = 1)) +
     labs(y = "Sea Surface Temperature (°C)", x = NULL) + 
     facet_wrap(~region,ncol=2) +
@@ -264,22 +261,22 @@ server <- function(input, output) {
           legend.text = element_text(size=16),
           axis.title.x=element_blank(),
           axis.text.x=element_text(color=c("black",NA,NA,"black",NA,NA,"black",NA,NA,"black",NA,NA,NA)),
-          plot.margin=unit(c(-0.7,0.05,3,0),"cm"))
-  pb2 <- ggdraw(pb2) + 
+          plot.margin=unit(c(-0.7,0.05,3,0),"cm")))
+  pb2b <- reactive(ggdraw(pb2()) + 
     annotate("text",x=0.5 ,y=0.065,label=paste0("NOAA Coral Reef Watch data, courtesy NOAA Pacific Islands Ocean Observing System (Updated: ",
                                                 format(max(BSdata$date),"%m-%d-%Y"),
                                                 ")\n Data are modeled satellite products and periodic discrepancies or gaps may exist across sensors and products.\n                                    Contact: Jordan.Watson@noaa.gov, Alaska Fisheries Science Center "),
-             hjust=0.5, size=7,family="sans",fontface=1,color=OceansBlue2,lineheight=0.85) 
+             hjust=0.5, size=7,family="sans",fontface=1,color=OceansBlue2,lineheight=0.85) )
   
   ####-----------------------------------------------####
   #combine plots
-  pb3<-plot_grid(pb1,pb2,ncol=1)
+  pb3<-reactive(plot_grid(pb1(),pb2b(),ncol=1))
   
   ####--------------------------------------------------------####
   #print to shiny
   #BS render plot
   output$BSplot <- renderPlot({
-    pb3
+    pb3()
   })
   
 
@@ -295,7 +292,7 @@ server <- function(input, output) {
     contentType = "image/png",
     content= function(file){
       png(file, height=14.25, width=18, units="in", res=300)
-      print(pb3)
+      print(pb3())
       dev.off()
     }
     
@@ -314,15 +311,8 @@ server <- function(input, output) {
   ###GOA tab
   #query webservice
   
-  GOAbasedata<-readRDS("GOAbase.rds")
-  
-  GOAupdateddata <- httr::content(httr::GET('https://apex.psmfc.org/akfin/data_marts/akmp/ecosystem_sub_crw_avg_sst?ecosystem_sub=Eastern%20Gulf%20of%20Alaska,Western%20Gulf%20of%20Alaska&start_date=20210101&end_date=20211231'), type = "application/json") %>% 
-    bind_rows %>% 
-    mutate(date=as_date(READ_DATE)) %>% 
-    data.frame %>% 
-    dplyr::select(date,meansst=MEANSST,Ecosystem_sub=ECOSYSTEM_SUB)
-  
-  GOAupdateddata<-bind_rows(GOAbasedata, GOAupdateddata)
+  GOAupdateddata<-base%>%
+    filter(Ecosystem_sub %in% c("Western Gulf of Alaska", "Eastern Gulf of Alaska"))
   
   GOAdata <- 
     GOAupdateddata %>% 
@@ -378,8 +368,8 @@ server <- function(input, output) {
     ggdraw(mylines_base)
   }
   
-  pg1 <- GOAplotfun("Western Gulf of Alaska","Eastern Gulf of Alaska") +
-    draw_image("Figures/fisheries_header_logo_jul2019.png",scale=0.2,x=mylogox,y=mylogoy,hjust=0.35)
+  pg1 <- reactive(GOAplotfun("Western Gulf of Alaska","Eastern Gulf of Alaska") +
+    draw_image("Figures/fisheries_header_logo_jul2019.png",scale=0.2,x=mylogox,y=mylogoy,hjust=0.35))
   
   #Create bottom panel
   
@@ -387,17 +377,16 @@ server <- function(input, output) {
                                    filter(Ecosystem_sub=="Western Gulf of Alaska") %>% 
                                    rename(t=date,temp=meansst) %>% 
                                    arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
-    mutate(region="2021 Western GOA Heatwaves") %>% 
+    mutate(region=paste0(current.year," Western GOA Heatwaves")) %>% 
     bind_rows((detect_event(ts2clm(GOAupdateddata %>%
                                      filter(Ecosystem_sub=="Eastern Gulf of Alaska") %>% 
                                      rename(t=date,temp=meansst) %>% 
                                      arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
-                mutate(region="2021 Eastern GOA Heatwaves"))
+                mutate(region=paste0(current.year," Eastern GOA Heatwaves")))
   
-  #  Create a vector of the days remaining in the year without data.
-  yearvec <- seq.Date(max(GOAmhw$t)+1,as_date(paste0(current.year,"-11-30")),"day")
+
   #  Replace the current year with the previous year for our remaining days vector.
-  GOAdummydat <- data.frame(t=as_date(gsub(current.year,(current.year-1),yearvec)),newt=yearvec) %>% 
+  GOAdummydat <- data.frame(t=yearvec-current.year.length, newt=yearvec) %>% 
     inner_join(GOAmhw %>% dplyr::select(region,thresh,seas,t)) %>% 
     dplyr::select(t=newt,region,thresh,seas) %>% 
     mutate(temp=NA)
@@ -411,12 +400,14 @@ server <- function(input, output) {
                   thresh_3x = thresh_2x + diff,
                   thresh_4x = thresh_3x + diff,
                   year=year(t),
-                  region2=factor(region, levels=c("2021 Western GOA Heatwaves","2021 Eastern GOA Heatwaves"))) %>% 
+                  region2=factor(region, levels=c(paste0(current.year," Western GOA Heatwaves"),
+                                                  paste0(current.year," Eastern GOA Heatwaves")))) %>% 
     arrange(t)
   
+
   
   #  Create annotation text for plot
-  GOAmhw_lab <- data.frame(region2=factor(c("2021 Western GOA Heatwaves","2021 Eastern GOA Heatwaves")),
+  GOAmhw_lab <- data.frame(region2=factor(c(paste0(current.year," Western GOA Heatwaves"),paste0(current.year, " Eastern GOA Heatwaves"))),
                            t=c(as_date(paste0(last.year,"-12-05")),as_date(paste0(last.year,"-12-05"))),
                            temp=rev(c((1*max(GOAclim_cat$temp,na.rm=TRUE)),(0.9*max(GOAclim_cat$temp,na.rm=TRUE)))),
                            mylab=rev(c("Heatwave intensity increases\n(successive dotted lines)\nas waters warm.",
@@ -424,7 +415,7 @@ server <- function(input, output) {
   
   
   
-  pg2 <- ggplot(data = GOAclim_cat %>% filter(t>=as.Date("2020-12-01")), aes(x = t, y = temp)) +
+  pg2 <- reactive(ggplot(data = GOAclim_cat %>% filter(t>=as.Date(paste0(last.year,"-12-01"))), aes(x = t, y = temp)) +
     geom_line(aes(y = temp, col = "Temperature"), size = 0.85) +
     geom_flame(aes(y2 = thresh, fill = Moderate)) +
     geom_flame(aes(y2 = thresh_2x, fill = Strong)) +
@@ -441,7 +432,7 @@ server <- function(input, output) {
                         breaks = c("Temperature", "Baseline", "Moderate (1x Threshold)"),guide=FALSE) +
     scale_fill_manual(name = "Heatwave\nIntensity", values = c(Extreme,Severe,Strong,Moderate),labels=c("Extreme","Severe","Strong","Moderate")#, guide = FALSE
     ) +
-    scale_x_date(limits=c(as_date("2020-12-01"),as_date("2021-11-30")),date_breaks="1 month",date_labels = "%b",expand=c(0.01,0)) +
+    scale_x_date(limits=c(as_date(paste0(last.year,"-12-01")),as_date(paste0(current.year,"-11-30"))),date_breaks="1 month",date_labels = "%b",expand=c(0.01,0)) +
     scale_y_continuous(labels = scales::number_format(accuracy = 1)) +
     labs(y = "Sea Surface Temperature (°C)", x = NULL) + 
     facet_wrap(~region2,ncol=2) +
@@ -453,18 +444,18 @@ server <- function(input, output) {
           legend.text = element_text(size=16),
           axis.title.x=element_blank(),
           axis.text.x=element_text(color=c("black",NA,NA,"black",NA,NA,"black",NA,NA,"black",NA,NA,NA)),
-          plot.margin=unit(c(-0.7,0.05,3,0),"cm"))
+          plot.margin=unit(c(-0.7,0.05,3,0),"cm")))
   
   #  Draw figure with text annotations
-  pg2 <- ggdraw(pg2) + 
+  pg2b <- reactive(ggdraw(pg2()) + 
     annotate("text",x=0.5,y=0.065,label=paste0("NOAA Coral Reef Watch data, courtesy NOAA Pacific Islands Ocean Observing System (Updated: ",
                                                format(max(GOAdata$date),"%m-%d-%Y"),
                                                ")\n Data are modeled satellite products and periodic discrepancies or gaps may exist across sensors and products.\n                                    Contact: Jordan.Watson@noaa.gov, Alaska Fisheries Science Center "),
-             hjust=0.5, size=7,family="sans",fontface=1,color=OceansBlue2,lineheight=0.85)
-  pg3<-plot_grid(pg1,pg2,ncol=1)
+             hjust=0.5, size=7,family="sans",fontface=1,color=OceansBlue2,lineheight=0.85))
+  pg3<-reactive(plot_grid(pg1(),pg2b(),ncol=1))
   
   output$GOAplot <- renderPlot({
-    pg3
+    pg3()
   })
   
  
@@ -478,7 +469,7 @@ server <- function(input, output) {
     contentType = "image/png",
     content= function(file){
       png(file, height=14.25, width=18, units="in", res=300)
-      print(pg3)
+      print(pg3())
       dev.off()
     })
   
@@ -493,21 +484,9 @@ server <- function(input, output) {
   
   #####-----------------------------------------------------------####
   # Aleuatians
-  #  Define the latest dataset
-  AIbasedata<-readRDS("AIbase.rds")
+  AIupdateddata <- base%>%
+    filter(Ecosystem_sub %in% c("Western Aleutians", "Central Aleutians", "Eastern Aleutians"))
   
-  
-  AIupdateddata <- httr::content(httr::GET('https://apex.psmfc.org/akfin/data_marts/akmp/ecosystem_sub_crw_avg_sst?ecosystem_sub=Eastern%20Aleutians,Central%20Aleutians,Western%20Aleutians&start_date=20210101&end_date=20211231'), type = "application/json") %>% 
-    bind_rows %>% 
-    mutate(date=as_date(READ_DATE)) %>% 
-    data.frame %>% 
-    dplyr::select(date,meansst=MEANSST,Ecosystem_sub=ECOSYSTEM_SUB)
-  
-  AIupdateddata<-bind_rows(AIbasedata, AIupdateddata)
-  #  Specify legend position coordinates (top panel)
-  AIlegx <- 0.375
-  
-  #  Query data from public web API 
   
   AIdata <- 
     AIupdateddata %>% 
@@ -523,6 +502,8 @@ server <- function(input, output) {
     arrange(read_date) 
   ####-------------------------------------------------------####
   #plot
+  #change legend position
+  AIlegx <- 0.375
   #  Create plotting function that will allow selection of 3 ESR regions
   AIplotfun <- function(region1,region2,region3){
     mylines_base <- ggplot() +
@@ -565,29 +546,29 @@ server <- function(input, output) {
     ggdraw(mylines_base)
   }
   
-  pa1 <- AIplotfun("Eastern Aleutians","Central Aleutians","Western Aleutians") + 
-    draw_image("Figures/fisheries_header_logo_jul2019.png",scale=0.2,x=mylogox,y=mylogoy,hjust=0.40)
+  pa1 <- reactive(AIplotfun("Eastern Aleutians","Central Aleutians","Western Aleutians") + 
+    draw_image("Figures/fisheries_header_logo_jul2019.png",scale=0.2,x=mylogox,y=mylogoy,hjust=0.40))
   
   # Use heatwaveR package to detect marine heatwaves.
   AImhw <- (detect_event(ts2clm(AIupdateddata %>% 
                                   filter(Ecosystem_sub=="Eastern Aleutians") %>% 
                                   rename(t=date,temp=meansst) %>% 
                                   arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
-    mutate(region="2021 Eastern Aleutians Heatwaves") %>% 
+    mutate(region=paste0(current.year," Eastern Aleutians Heatwaves")) %>% 
     bind_rows((detect_event(ts2clm(AIupdateddata %>%
                                      filter(Ecosystem_sub=="Central Aleutians") %>% 
                                      rename(t=date,temp=meansst) %>% 
                                      arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
-                mutate(region="2021 Central Aleutians Heatwaves")) %>%
+                mutate(region=paste0(current.year," Central Aleutians Heatwaves"))) %>%
     bind_rows((detect_event(ts2clm(AIupdateddata %>%
                                      filter(Ecosystem_sub=="Western Aleutians") %>% 
                                      rename(t=date,temp=meansst) %>% 
                                      arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
-                mutate(region="2021 Western Aleutians Heatwaves"))
+                mutate(region=paste0(current.year," Western Aleutians Heatwaves")))
   
   
   #  Replace the current year with the previous year for our remaining days vector.
-  AIdummydat <- data.frame(t=as_date(gsub(current.year,(current.year-1),yearvec)),newt=yearvec) %>% 
+  AIdummydat <- data.frame(t=yearvec-current.year.length,newt=yearvec) %>%
     inner_join(AImhw %>% dplyr::select(region,thresh,seas,t)) %>% 
     dplyr::select(t=newt,region,thresh,seas) %>% 
     mutate(temp=NA)
@@ -600,17 +581,18 @@ server <- function(input, output) {
                   thresh_3x = thresh_2x + diff,
                   thresh_4x = thresh_3x + diff,
                   year=year(t),
-                  region2=factor(region, levels=c("2021 Western Aleutians Heatwaves","2021 Central Aleutians Heatwaves","2021 Eastern Aleutians Heatwaves"))) %>% 
+                  region2=factor(region, levels=c(paste0(current.year," Western Aleutians Heatwaves"),
+                                                  paste0(current.year," Central Aleutians Heatwaves"),
+                                                  paste0(current.year," Eastern Aleutians Heatwaves")))) %>% 
     arrange(t)
   
   #  Create annotation text for plot
-  AImhw_lab <- data.frame(region2=factor(c("2021 Western Aleutians Heatwaves","2021 Central Aleutians Heatwaves","2021 Eastern Aleutians Heatwaves")),
+  AImhw_lab <- data.frame(region2=factor(c(paste0(current.year," Western Aleutians Heatwaves"),paste0(current.year," Central Aleutians Heatwaves"),paste0(current.year," Eastern Aleutians Heatwaves"))),
                           t=c(as_date(paste0(last.year,"-12-05")),as_date(paste0(last.year,"-12-05")),as_date(paste0(last.year,"-12-05"))),
                           temp=rev(c((1*max(AIclim_cat$temp,na.rm=TRUE)),(0.9*max(AIclim_cat$temp,na.rm=TRUE)),(0.8*max(AIclim_cat$temp,na.rm=TRUE)))),
                           mylab=rev(c("Heatwave intensity increases\n(successive dotted lines)\nas waters warm.",
                                       "Heatwaves occur when daily\nSST exceeds the 90th\npercentile of normal\n(lowest dotted line) for\n5 consecutive days.","")))
-  #  Plotting code only slightly modified from heatwaveR vignette
-  pa2 <- ggplot(data = AIclim_cat %>% filter(t>=as.Date("2020-12-01")), aes(x = t, y = temp)) +
+  pa2 <- reactive(ggplot(data = AIclim_cat %>% filter(t>=as.Date(paste0(last.year,"-12-01"))), aes(x = t, y = temp)) +
     geom_line(aes(y = temp, col = "Temperature"), size = 0.85) +
     geom_flame(aes(y2 = thresh, fill = Moderate)) +
     geom_flame(aes(y2 = thresh_2x, fill = Strong)) +
@@ -621,13 +603,12 @@ server <- function(input, output) {
     geom_line(aes(y = thresh_4x, col = "Extreme (4x Threshold)"), size = 0.5, linetype = "dotted") +
     geom_line(aes(y = seas, col = "Baseline"), size = 0.65,linetype="solid") +
     geom_line(aes(y = thresh, col = "Moderate (1x Threshold)"), size = 0.5,linetype= "dotted") +
-    
     geom_text(data=AImhw_lab,aes(x=t,y=temp,label=mylab),hjust=0,size=8,family="sans",lineheight=1) +
     scale_colour_manual(name = NULL, values = lineColCat,
                         breaks = c("Temperature", "Baseline", "Moderate (1x Threshold)"),guide=FALSE) +
     scale_fill_manual(name = "Heatwave\nIntensity", values = c(Extreme,Severe,Strong,Moderate),labels=c("Extreme","Severe","Strong","Moderate")#, guide = FALSE
     ) +
-    scale_x_date(limits=c(as_date("2020-12-01"),as_date("2021-11-30")),date_breaks="1 month",date_labels = "%b",expand=c(0.01,0)) +
+    scale_x_date(limits=c(as_date(paste0(last.year,"-12-01")),as_date(paste0(current.year,"-11-30"))),date_breaks="1 month",date_labels = "%b",expand=c(0.01,0)) +
     scale_y_continuous(labels = scales::number_format(accuracy = 1)) +
     labs(y = "Sea Surface Temperature (°C)", x = NULL) + 
     facet_wrap(~region2,ncol=3) +
@@ -639,17 +620,17 @@ server <- function(input, output) {
           legend.text = element_text(size=16),
           axis.title.x=element_blank(),
           axis.text.x=element_text(color=c("black",NA,NA,"black",NA,NA,"black",NA,NA,"black",NA,NA,NA)),
-          plot.margin=unit(c(-0.7,0.05,3,0),"cm"))
-  pa2 <- ggdraw(pa2) + 
+          plot.margin=unit(c(-0.7,0.05,3,0),"cm")))
+  pa2b <- reactive(ggdraw(pa2()) + 
     annotate("text",x=0.5,y=0.065,label=paste0("NOAA Coral Reef Watch data, courtesy NOAA Pacific Islands Ocean Observing System (Updated: ",
                                                format(max(AIdata$date),"%m-%d-%Y"),
                                                ")\n Data are modeled satellite products and periodic discrepancies or gaps may exist across sensors and products.\n                                    Contact: Jordan.Watson@noaa.gov, Alaska Fisheries Science Center "),
              
-             hjust=0.5, size=7,family="sans",fontface=1,color=OceansBlue2,lineheight=0.85) 
-  pa3<-plot_grid(pa1,pa2,ncol=1)
+             hjust=0.5, size=7,family="sans",fontface=1,color=OceansBlue2,lineheight=0.85) )
+  pa3<-reactive(plot_grid(pa1(),pa2b(),ncol=1))
   
   output$AIplot <- renderPlot({
-    pa3   
+    pa3()   
   })
 
   ####---------------------------------------------------------####
@@ -662,7 +643,7 @@ server <- function(input, output) {
     contentType = "image/png",
     content= function(file){
       png(file, height=14.25, width=18, units="in", res=300)
-      print(pa3)
+      print(pa3())
       dev.off()
     })
   #csv
