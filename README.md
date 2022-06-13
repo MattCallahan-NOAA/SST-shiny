@@ -9,11 +9,11 @@ Marine heatwave calculations are performed on the daily SST data using the heatw
 
 This shiny app is hosted on the Pacific States Marine Fisheries Commission shiny server https://shinyfin.psmfc.org.
 
-The Basedata_rds_update_script.R pulls SST aggregated by Alaska ecosystem subregion from the AKFIN database using a web service. This script runs on a nightly job to provide the latest data to the app each day. Users must run this script prior to running app.R. For more details on AKFIN web services see https://repository.library.noaa.gov/view/noaa/33498.
+The Basedata_rds_update_script.R pulls SST aggregated by Alaska ecosystem subregion from the AKFIN database using a web service. This script runs nightly on the shiny server to provide the latest data to the app each day, but does not update this repo. *Run this script to get the latest sst data.* For more details on AKFIN web services see https://repository.library.noaa.gov/view/noaa/33498.
 
 The app.R file includes all plotting and heatwave calculation code.
 
-For more information see the description below, this article (https://www.fisheries.noaa.gov/feature-story/current-sea-surface-temperatures-eastern-bering-sea) or contact emily.lemagie@noaa.gov or matt.callahan@noaa.gov.
+For more information see the description below, this article (https://www.fisheries.noaa.gov/feature-story/current-sea-surface-temperatures-eastern-bering-sea), or contact emily.lemagie@noaa.gov or matt.callahan@noaa.gov.
 
 
 **Methods**
