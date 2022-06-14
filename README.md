@@ -25,6 +25,9 @@ To improve processing speed and avoid downloading the entire dataset each time t
 When users load the Shiny app, it pulls the SST time series from this file.
 These data typically have a 1-2 day latency, allowing users to visualize SST and marine heatwave status in near real-time.
 
+![](Figures/esr_map_depth_filters.png)
+Figure 1. Extent of SST aggregation within each ecosystem subregion
+
 Years are defined as December-November to keep winter (December-February) within a single year, as per the convention within the ecosystem status reports. 
 Current year marine heatwave events are calculated for each region according to the methods of Hobday et al. (2016), as implemented within the heatwaveR package (Schlegel & Smit 2018). 
 Briefly, a daily mean SST is compared to a baseline for that day of year (climatological mean, or normal), calculated from the first 30 years of the time series (1985-2014 here). 
@@ -40,7 +43,8 @@ The visualization consists a map and description, and a separate tab for each ec
 Tabs contain an upper SST plot and lower heatwave plot for each ecosystem subregion (Figure 2). 
 The current year's daily temperatures (black lines) are compared to the previous year (light blue line), the daily average (1985-2014, dark blue line), and each of the individual years since 1985 (grey lines). The app also comes with a download image button, and a download data option, which downloads the entire average SST time series as a .csv.
 
-![Figure 2. Downloaded image from this shiny app for the Gulf of Alaska on 6/13/2022](Figures/GOA-SST-2022-06-13.png)
+![](Figures/GOA-SST-2022-06-13.png)
+Figure 2. Downloaded image from this shiny app for the Gulf of Alaska on 6/13/2022
 
 **Discussion**
 This Shiny app is utilized by a range of analysts, managers, and science communicators. 
