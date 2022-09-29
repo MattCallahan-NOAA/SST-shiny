@@ -1,0 +1,13 @@
+library(tidyverse)
+library(httr)
+ssl<-httr::content(
+  httr::GET('https://apex.psmfc.org/akfin/data_marts/akmp/esp_indicators?'), 
+  type = "application/json") %>% 
+  bind_rows()%>%
+  rename_with(tolower)
+
+ssl%>%filter(grepl('LION', INDICATOR_NAME))
+  
+
+
+ssl%>%filter(INDICATOR_NAME=="Annual_Steller_Sea_Lion_Adult_GOA_Survey")

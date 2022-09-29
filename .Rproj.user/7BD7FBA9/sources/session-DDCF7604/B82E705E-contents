@@ -1,20 +1,15 @@
 # SST-shiny
 
 **Overview** 
-We present daily sea surface temperatures and marine heatwave status for regions of interest in Alaskan Waters. 
-
-Current apps include:
-1. Ecosystem regions managed by the Alaska Fisheries Science Center [Google](https://shinyfin.psmfc.org/ak-sst-mhw/)
-2. Southeast Alaska fishing zones [Google](https://shinyfin.psmfc.org/baranof-sst-beta/)
-3. Bering Sea crab areas [Google](https://shinyfin.psmfc.org/bs-crab-avg-sst/)
+We present daily sea surface temperatures and marine heatwave status for each of the ecosystem regions managed by the Alaska Fisheries Science Center https://shinyfin.psmfc.org/ak-sst-mhw/ . 
 
 Temperatures are updated automatically using satellite data curated by NOAA's Coral Reef Watch Program (https://coralreefwatch.noaa.gov/). 
 
 Marine heatwave calculations are performed on the daily SST data using the heatwaveR package (https://robwschlegel.github.io/heatwaveR/).
 
-These shiny apps are hosted on the Pacific States Marine Fisheries Commission shiny server https://shinyfin.psmfc.org.
+This shiny app is hosted on the Pacific States Marine Fisheries Commission shiny server https://shinyfin.psmfc.org.
 
-Some apps use a separate script (e.g. Basedata_rds_update_script.R for the ak-sst-mhw app) to pull SST aggregated by region from the AKFIN database using a web service. These scripts run nightly on the shiny server to provide the latest data to the app each day, but does not update this repo. *Run this script to get the latest sst data.* For more details on AKFIN web services see https://repository.library.noaa.gov/view/noaa/33498.
+The Basedata_rds_update_script.R pulls SST aggregated by Alaska ecosystem subregion from the AKFIN database using a web service. This script runs nightly on the shiny server to provide the latest data to the app each day, but does not update this repo. *Run this script to get the latest sst data.* For more details on AKFIN web services see https://repository.library.noaa.gov/view/noaa/33498.
 
 The app.R file includes all plotting and heatwave calculation code.
 
@@ -23,22 +18,40 @@ For more information see the description below, this article (https://www.fisher
 
 **Methods**
 We use the coral reef watch SST product (Liu et al., 2015), which has a 0.05 degree latitude-longitude grid, beginning in January 1985. 
-SST data are downloaded daily from the NESDIS FTP site https://www.star.nesdis.noaa.gov/pub/sod/mecb/crw/data/coraltemp/v3.1/ to the Alaska Fisheries Information Network (AKFIN) database, clipped to the US EEZ, and joined to specified regions by a lookup table containing spatial strata for each SST grid cell (Watson and Callahan 2021).
-AKFIN calculates and stores daily averages of SST for each region in a table, and distributes these data through a customized web service (Watson & Callahan, 2021).
-
+SST data are downloaded daily from the NESDIS FTP site https://www.star.nesdis.noaa.gov/pub/sod/mecb/crw/data/coraltemp/v3.1/ to the Alaska Fisheries Information Network (AKFIN) database, clipped to the US EEZ, and joined to ecosystem subregions by a lookup table containing spatial strata for each SST grid cell (Watson and Callahan 2021).
+AKFIN calculates and stores daily averages of SST for each ecosystem subregion in a table, and distributes these data through a customized web service (Watson & Callahan, 2021).
+A depth filter (10-200m) is applied to Bering Sea and Gulf of Alaska cells prior to aggregation to limit results to more fisheries relevant continental shelf areas, but no filter is applied in the Aleutian Islands due to the narrow continental shelf (Figure 1). 
 To improve processing speed and avoid downloading the entire dataset each time the app is loaded, a scheduled job downloads the time average SST time series from the AKFIN web service to a .RDS file stored on the shiny server.
 When users load the Shiny app, it pulls the SST time series from this file.
 These data typically have a 1-2 day latency, allowing users to visualize SST and marine heatwave status in near real-time.
 
+![](Figures/esr_map_depth_filters.png)
+Figure 1. Extent of SST aggregation within each ecosystem subregion
+
+Years are defined as December-November to keep winter (December-February) within a single year, as per the convention within the ecosystem status reports. 
 Current year marine heatwave events are calculated for each region according to the methods of Hobday et al. (2016), as implemented within the heatwaveR package (Schlegel & Smit 2018). 
 Briefly, a daily mean SST is compared to a baseline for that day of year (climatological mean, or normal), calculated from the first 30 years of the time series (1985-2014 here). 
 A heatwave occurs when SST exceeds a threshold (the 90th percentile of the 30-year baseline) for five consecutive days.
 Heatwave intensities are then categorized as moderate (SST between the threshold and two times the difference between the threshold and the climatological mean), strong (SST two to three times the difference between the threshold and the climatological mean), severe (SST three to four times the difference between the threshold and the climatological mean), and extreme (SST > four times the difference between the threshold and the climatological mean; Hobday et al. 2018). 
 Plots are generated with the ggplot package in R (Wickham 2016, R Core Team 2020).
 
+In 2022 The boundaries of the ecosystem status report regions used in this app were updated. 
+NMFS 541 was transferred  from the eastern to central Aleutians and the EAI/WGOA boundary was shifted one degree East.
+
+**Visualization**
+The visualization consists a map and description, and a separate tab for each ecosystem (Gulf of Alaska, Bering Sea, and Aleuatian Islands).
+Tabs contain an upper SST plot and lower heatwave plot for each ecosystem subregion (Figure 2). 
+The current year's daily temperatures (black lines) are compared to the previous year (light blue line), the daily average (1985-2014, dark blue line), and each of the individual years since 1985 (grey lines). The app also comes with a download image button, and a download data option, which downloads the entire average SST time series as a .csv.
+
+![](Figures/GOA-SST-2022-06-13.png)
+Figure 2. Downloaded image from this shiny app for the Gulf of Alaska on 6/13/2022
+
 **Discussion**
-The figures generated by by these apps are used in presentations and shared on NOAA social media (e.g., NOAA website, Twitter, Facebook), particularly during notable marine heatwave events. 
+This Shiny app is utilized by a range of analysts, managers, and science communicators. 
+Authors of ecosystem status reports frequently can check SST and marine heatwave status with ease, facilitating early detection of marine heatwaves, such as the strong Aleutian Islands heatwave in September 2021. 
+The figures generated by this app are used in presentations and shared on NOAA social media (e.g., NOAA website, Twitter, Facebook), particularly during notable marine heatwave events. 
 The temporal structure of this visualization also complements existing products such as the coral reef watch heatwave map https://coralreefwatch.noaa.gov/product/marine_heatwave/. 
+
 
 Marine heatwave categorization (Hobday et al. 2016, 2018) is useful for identifying periods of warm SST. 
 However, periods of warm SST that are slightly below marine heatwave thresholds may still have ecological impacts relative to normal. 
@@ -54,38 +67,9 @@ OI SST has a coarser resolution than the CRW SST data set used here, and with an
 Such discrepancies occasionally lead to a heatwave detected from one product but not the other. 
 For example, in February 2021, the central Aleutian Islands experienced a marine heatwave according to the OI SST data set but not CRW SST.
 
-The boundaries and depth filters currently used are preferred by ecosystem status report authors or other scientists, but some users might have interest in different spatial extents (e.g. off shelf waters, inside waters, other management regions, or species distribution areas).
-This code is easily applied to SST in other regions, or other data products that may be desirable to monitor through time such as chlorophyll.
-
-**AK-SST-MHW**
-This Shiny app is utilized by a range of analysts, managers, and science communicators.
-
-SST is aggregated by Ecosystem Status Report (ESR) subregions. A depth filter (10-200m) is applied to Bering Sea and Gulf of Alaska cells prior to aggregation to limit results to more fisheries relevant continental shelf areas, but no filter is applied in the Aleutian Islands due to the narrow continental shelf (Figure 1). In 2022 The boundaries of the ecosystem status report regions used in this app were updated. 
-NMFS 541 was transferred  from the eastern to central Aleutians and the EAI/WGOA boundary was shifted one degree East. Years are defined as December-November to keep winter (December-February) within a single year, as per the convention within the ecosystem status reports.
-
-![](ak-sst-mhw/Figures/esr_map_depth_filters.png)
-Figure 1. Extent of SST aggregation within each ecosystem subregion
-
-The visualization consists a map and description, and a separate tab for each ecosystem (Gulf of Alaska, Bering Sea, and Aleuatian Islands).
-Tabs contain an upper SST plot and lower heatwave plot for each ecosystem subregion (Figure 2). 
-The current year's daily temperatures (black lines) are compared to the previous year (light blue line), the daily average (1985-2014, dark blue line), and each of the individual years since 1985 (grey lines). The app also comes with a download image button, and a download data option, which downloads the entire average SST time series as a .csv.
-
-![](ak-sst-mhw/Figures/GOA-SST-2022-06-13.png)
-Figure 2. Downloaded image from this shiny app for the Gulf of Alaska on 6/13/2022
-
-Authors of ecosystem status reports frequently can check SST and marine heatwave status with ease, facilitating early detection of marine heatwaves, such as the strong Aleutian Islands heatwave in September 2021. 
-
-**bs-crab-sst-mhw**
-SST and MHW status are provided for crab areas in the Bering Sea (Figure 3). No depth filter is applied and years run December-November.
-
-![](bs-crab-sst-mhw/www/crab_map.png)
-Figure 3. Crab areas in the Bering Sea
-
-**Baranof-sst-beta**
-This app was created at the request of the Alaska Fisheries Science Center Economics & Social Sciences Research Program. It aggregates SST by ADF&G Southeast Alaska fishing management zones (Figure 4). No depth filter is applied, years start in January, and the app pulls directly from an AKFIN web service rather than using a data file. 
-
-![](baranof-sst/Figures/map_for_app_no_points.png)
-Figure 4. Downloaded image from this shiny app for the Gulf of Alaska on 6/13/2022
+The boundaries and depth filters used here are preferred by ecosystem status report authors, but some users might have interest in different spatial extents (e.g. off shelf waters, inside waters, other management regions, or species distribution areas).
+The code developed for this app code could be applied to SST in other regions, or other data products that may be desirable to monitor through time such as chlorophyll.
+As an example, I developed an SST and marine heatwave shiny app specific to Southeast Alaska troll fleet waters https://shinyfin.psmfc.org/baranof-sst-beta/ .
 
 **Acknowledgements**
 Jordan Watson originally developed these figures and provided vital input throughout. Bob Nigh (Nexus data solutions) developed the SST upload process and web service.

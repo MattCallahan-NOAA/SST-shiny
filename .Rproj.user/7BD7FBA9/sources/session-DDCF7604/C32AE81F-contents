@@ -1,0 +1,41 @@
+####public####
+
+library(tidyverse)
+library(httr)
+
+updateddata<-httr::content(
+  httr::GET('https://apex.psmfc.org/akfin/data_marts/akmp/baranof_avg_sst?start_date=20220117&end_date=20221231'), 
+  type = "application/json") %>% 
+  bind_rows
+
+####authenticated####
+
+library(httr) #for accessing web services
+library(jsonlite) #for the secret string authentication
+library(tidyverse) #for converting data into exportable data frame
+
+
+# Secret string text file needs to be in your working R directory
+secret <- jsonlite::base64_enc( readChar("Callahan_token.txt",nchars=1e6) ) 
+
+# Get token from API
+req <- httr::POST("https://apex.psmfc.org/akfin/data_marts/oauth/token",
+                  httr::add_headers(
+                    "Authorization" = paste("Basic", gsub("\n", "", secret)),
+                    "Content-Type" = "application/x-www-form-urlencoded;charset=UTF-8"
+                  ),
+                  body = "grant_type=client_credentials"
+);
+
+#  Create authentication error message
+httr::stop_for_status(req, "Something broke.")
+token <- paste("Bearer", httr::content(req)$access_token)
+
+
+## Data Download (R)
+
+data<-fromJSON(content(
+  GET('https://apex.psmfc.org/akfin/data_marts/akm/get_ai_coral_sponge?startyear=2001&endyear=2002',
+      add_headers(Authorization = token)), 
+  as="text")) %>%  
+  bind_rows
