@@ -85,7 +85,7 @@ Figure 3. Crab areas in the Bering Sea
 This app was created at the request of the Alaska Fisheries Science Center Economics & Social Sciences Research Program. It aggregates SST by ADF&G Southeast Alaska fishing management zones (Figure 4). No depth filter is applied, years start in January, and the app pulls directly from an AKFIN web service rather than using a data file. 
 
 ![](baranof-sst-beta/Figures/map_for_app_no_points.png)
-Figure 4. Downloaded image from this shiny app for the Gulf of Alaska on 6/13/2022
+Figure 4. Southeast Alaska zones. Black lines are ADF&G statistical areas.
 
 **Acknowledgements**
 Jordan Watson originally developed these figures and provided vital input throughout. Bob Nigh (Nexus data solutions) developed the SST upload process and web service.
