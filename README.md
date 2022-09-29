@@ -4,9 +4,9 @@
 We present daily sea surface temperatures and marine heatwave status for regions of interest in Alaskan Waters. 
 
 Current apps include:
-1. Ecosystem regions managed by the Alaska Fisheries Science Center [Google](https://shinyfin.psmfc.org/ak-sst-mhw/)
-2. Southeast Alaska fishing zones [Google](https://shinyfin.psmfc.org/baranof-sst-beta/)
-3. Bering Sea crab areas [Google](https://shinyfin.psmfc.org/bs-crab-avg-sst/)
+1. Ecosystem regions managed by the Alaska Fisheries Science Center [ESR subregion  shiny](https://shinyfin.psmfc.org/ak-sst-mhw/)
+2. Southeast Alaska fishing zones [southeast alaska shiny](https://shinyfin.psmfc.org/baranof-sst-beta/)
+3. Bering Sea crab areas [Bering sea crab area shiny](https://shinyfin.psmfc.org/bs-crab-avg-sst/)
 
 Temperatures are updated automatically using satellite data curated by NOAA's Coral Reef Watch Program (https://coralreefwatch.noaa.gov/). 
 
