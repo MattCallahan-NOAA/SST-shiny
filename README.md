@@ -5,8 +5,8 @@ We present daily sea surface temperatures and marine heatwave status for regions
 
 Current apps include:
 1. Ecosystem regions managed by the Alaska Fisheries Science Center [ESR subregion  shiny](https://shinyfin.psmfc.org/ak-sst-mhw/)
-2. Southeast Alaska fishing zones [southeast alaska shiny](https://shinyfin.psmfc.org/baranof-sst-beta/)
-3. Bering Sea crab areas [Bering sea crab area shiny](https://shinyfin.psmfc.org/bs-crab-avg-sst/)
+2. Southeast Alaska fishing zones [Southeast Alaska shiny](https://shinyfin.psmfc.org/baranof-sst-beta/)
+3. Bering Sea crab areas [Bering Sea crab area shiny](https://shinyfin.psmfc.org/bs-crab-avg-sst/)
 
 Temperatures are updated automatically using satellite data curated by NOAA's Coral Reef Watch Program (https://coralreefwatch.noaa.gov/). 
 
@@ -75,16 +75,16 @@ Figure 2. Downloaded image from this shiny app for the Gulf of Alaska on 6/13/20
 
 Authors of ecosystem status reports frequently can check SST and marine heatwave status with ease, facilitating early detection of marine heatwaves, such as the strong Aleutian Islands heatwave in September 2021. 
 
-**bs-crab-sst-mhw**
+**bs-crab-avg-sst**
 SST and MHW status are provided for crab areas in the Bering Sea (Figure 3). No depth filter is applied and years run December-November.
 
-![](bs-crab-sst-mhw/www/crab_map.png)
+![](bs-crab-avg-sst/www/crab_map.png)
 Figure 3. Crab areas in the Bering Sea
 
 **Baranof-sst-beta**
 This app was created at the request of the Alaska Fisheries Science Center Economics & Social Sciences Research Program. It aggregates SST by ADF&G Southeast Alaska fishing management zones (Figure 4). No depth filter is applied, years start in January, and the app pulls directly from an AKFIN web service rather than using a data file. 
 
-![](baranof-sst/Figures/map_for_app_no_points.png)
+![](baranof-sst-beta/Figures/map_for_app_no_points.png)
 Figure 4. Downloaded image from this shiny app for the Gulf of Alaska on 6/13/2022
 
 **Acknowledgements**
