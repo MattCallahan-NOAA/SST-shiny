@@ -101,8 +101,14 @@ server <- function(input, output) {
   #  Set year criteria to automatically identify the current and previous years
   current.year <- max(BSdata$year2)
   last.year <- current.year-1
-  mean.years <- 1985:2015 # We use the oldest 30-year time series as our climatological baseline.
-  mean.lab <- "Mean 1985-2015"
+  
+  climatology_start_year <- 1985
+  climatology_start_date <- "1985-01-01"
+  climatology_end_year <- 2014
+  climatology_end_date <- "2014-12-31"
+  mean.years <- climatology_start_year:climatology_end_year 
+  mean.lab <- paste0("Mean ",climatology_start_year,"-",climatology_end_year)
+
   
   ####---------------------------------------------------####
   #Plots for P1
@@ -196,12 +202,12 @@ server <- function(input, output) {
   BSmhw <- (detect_event(ts2clm(BSupdateddata %>% 
                                   filter(Ecosystem_sub=="Southeastern Bering Sea") %>% 
                                   rename(t=date,temp=meansst) %>% 
-                                  arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
+                                  arrange(t), climatologyPeriod = c(climatology_start_date, climatology_end_date))))$clim %>% 
     mutate(region=paste0(current.year," Southeastern Bering Sea Heatwaves")) %>% 
     bind_rows((detect_event(ts2clm(BSupdateddata %>%
                                      filter(Ecosystem_sub=="Northern Bering Sea") %>% 
                                      rename(t=date,temp=meansst) %>% 
-                                     arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
+                                     arrange(t), climatologyPeriod = c(climatology_start_date, climatology_end_date))))$clim %>% 
                 mutate(region=paste0(current.year," Northern Bering Sea Heatwaves")))
   
   #  Create a vector of the days remaining in the year without data.
@@ -376,12 +382,12 @@ server <- function(input, output) {
   GOAmhw <- (detect_event(ts2clm(GOAupdateddata %>% 
                                    filter(Ecosystem_sub=="Western Gulf of Alaska") %>% 
                                    rename(t=date,temp=meansst) %>% 
-                                   arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
+                                   arrange(t), climatologyPeriod = c(climatology_start_date, climatology_end_date))))$clim %>% 
     mutate(region=paste0(current.year," Western GOA Heatwaves")) %>% 
     bind_rows((detect_event(ts2clm(GOAupdateddata %>%
                                      filter(Ecosystem_sub=="Eastern Gulf of Alaska") %>% 
                                      rename(t=date,temp=meansst) %>% 
-                                     arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
+                                     arrange(t), climatologyPeriod = c(climatology_start_date, climatology_end_date))))$clim %>% 
                 mutate(region=paste0(current.year," Eastern GOA Heatwaves")))
   
 
@@ -553,17 +559,17 @@ server <- function(input, output) {
   AImhw <- (detect_event(ts2clm(AIupdateddata %>% 
                                   filter(Ecosystem_sub=="Eastern Aleutians") %>% 
                                   rename(t=date,temp=meansst) %>% 
-                                  arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
+                                  arrange(t), climatologyPeriod = c(climatology_start_date, climatology_end_date))))$clim %>% 
     mutate(region=paste0(current.year," Eastern Aleutians Heatwaves")) %>% 
     bind_rows((detect_event(ts2clm(AIupdateddata %>%
                                      filter(Ecosystem_sub=="Central Aleutians") %>% 
                                      rename(t=date,temp=meansst) %>% 
-                                     arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
+                                     arrange(t), climatologyPeriod = c(climatology_start_date, climatology_end_date))))$clim %>% 
                 mutate(region=paste0(current.year," Central Aleutians Heatwaves"))) %>%
     bind_rows((detect_event(ts2clm(AIupdateddata %>%
                                      filter(Ecosystem_sub=="Western Aleutians") %>% 
                                      rename(t=date,temp=meansst) %>% 
-                                     arrange(t), climatologyPeriod = c("1985-12-01", "2015-11-30"))))$clim %>% 
+                                     arrange(t), climatologyPeriod = c(climatology_start_date, climatology_end_date))))$clim %>% 
                 mutate(region=paste0(current.year," Western Aleutians Heatwaves")))
   
   
