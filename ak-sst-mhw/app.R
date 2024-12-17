@@ -271,7 +271,7 @@ server <- function(input, output) {
   pb2b <- reactive(ggdraw(pb2()) + 
     annotate("text",x=0.5 ,y=0.065,label=paste0("NOAA Coral Reef Watch data, courtesy NOAA Pacific Islands Ocean Observing System (Updated: ",
                                                 format(max(BSdata$date),"%m-%d-%Y"),
-                                                ")\n Data are modeled satellite products and periodic discrepancies or gaps may exist across sensors and products.\n                                    Contact: Jordan.Watson@noaa.gov, Alaska Fisheries Science Center "),
+                                                ")\n Data are modeled satellite products and periodic discrepancies or gaps may exist across sensors and products.\n                                    Contact: matt.callahan@noaa.gov, Alaska Fisheries Science Center "),
              hjust=0.5, size=7,family="sans",fontface=1,color=OceansBlue2,lineheight=0.85) )
   
   ####-----------------------------------------------####
@@ -456,7 +456,7 @@ server <- function(input, output) {
   pg2b <- reactive(ggdraw(pg2()) + 
     annotate("text",x=0.5,y=0.065,label=paste0("NOAA Coral Reef Watch data, courtesy NOAA Pacific Islands Ocean Observing System (Updated: ",
                                                format(max(GOAdata$date),"%m-%d-%Y"),
-                                               ")\n Data are modeled satellite products and periodic discrepancies or gaps may exist across sensors and products.\n                                    Contact: Jordan.Watson@noaa.gov, Alaska Fisheries Science Center "),
+                                               ")\n Data are modeled satellite products and periodic discrepancies or gaps may exist across sensors and products.\n                                    Contact: matt.callahan@noaa.gov, Alaska Fisheries Science Center "),
              hjust=0.5, size=7,family="sans",fontface=1,color=OceansBlue2,lineheight=0.85))
   pg3<-reactive(plot_grid(pg1(),pg2b(),ncol=1))
   
@@ -630,7 +630,7 @@ server <- function(input, output) {
   pa2b <- reactive(ggdraw(pa2()) + 
     annotate("text",x=0.5,y=0.065,label=paste0("NOAA Coral Reef Watch data, courtesy NOAA Pacific Islands Ocean Observing System (Updated: ",
                                                format(max(AIdata$date),"%m-%d-%Y"),
-                                               ")\n Data are modeled satellite products and periodic discrepancies or gaps may exist across sensors and products.\n                                    Contact: Jordan.Watson@noaa.gov, Alaska Fisheries Science Center "),
+                                               ")\n Data are modeled satellite products and periodic discrepancies or gaps may exist across sensors and products.\n                                    Contact: matt.callahan@noaa.gov, Alaska Fisheries Science Center "),
              
              hjust=0.5, size=7,family="sans",fontface=1,color=OceansBlue2,lineheight=0.85) )
   pa3<-reactive(plot_grid(pa1(),pa2b(),ncol=1))
